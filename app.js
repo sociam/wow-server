@@ -79,11 +79,37 @@ var connectQueue = function (queueName, outName) {
     });
 };
 
+
+var connectQueueTwo = function (queueName, outName) {
+    return amqp.connect("amqp://wsi-h1.soton.ac.uk").then(function(conn) {
+
+        process.once('SIGINT', function() { conn.close(); });
+        return conn.createChannel().then(function(ch) {
+            var ok = ch.assertExchange(queueName, 'fanout', {durable: false});
+
+            ok = ok.then(function() { return ch.assertQueue('', {exclusive: true}); });
+
+            ok = ok.then(function(qok) {
+                return ch.bindQueue(qok.queue, queueName, '').then(function() {
+                    return qok.queue;
+                });
+            });
+
+            ok = ok.then(function(queue) {
+                return ch.consume(queue, function (msg) { emitMsg(outName, msg); }, {noAck: true});
+            });
+
+            return ok;
+        });
+    });
+};
+
 var connect = connectQueue("wikipedia_hose", "wikipedia_revisions");
 connect = connect.then(function() { return connectQueue("twitter_hose", "tweets"); }, showErr);
 connect = connect.then(function() { return connectQueue("trends_hose", "trends"); }, showErr);
-connect = connect.then(function() { return connectQueue("spinn3r_hose", "spinn3r"); }, showErr);
-connect = connect.then(function() {
-    console.log("Ready.");
-}, showErr);
 
+//for the larger spinn3r connection
+connect = connect.then(function() { return connectQueueTwo("spinn3r_hose", "spinn3r"); }, showErr);
+
+//Finally, are we ready?
+connect = connect.then(function() { console.log("Ready."); }, showErr);
