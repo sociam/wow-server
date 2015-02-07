@@ -41,14 +41,15 @@ var emitMsg = function (outName, msg) {
         if (outName == "wikipedia_revisions") {
             var page_url = data.wikipedia_page_url;
             if (page_url) {
-                wpimg(page_url).then(function (image) {
-                    if (image && image != "") {
-                        io.emit('wikipedia_images', {"image_url": image, "data": data});
-                    }
-                }, function (e) {
-                    // error querying etc
-                });
-            }
+		      	wpimg(page_url).then(function (image) {
+                    		if (image && image != "") {
+                        	io.emit('wikipedia_images', {"image_url": image, "data": data});
+                    	}
+		
+                	}, function (e) {
+                    	// error querying etc
+                	});
+		}
         }
     } catch (e) {
         //
@@ -104,12 +105,20 @@ var connectQueueTwo = function (queueName, outName) {
     });
 };
 
-var connect = connectQueue("wikipedia_hose", "wikipedia_revisions");
-connect = connect.then(function() { return connectQueue("twitter_hose", "tweets"); }, showErr);
+var connect = connectQueue("twitter_hose", "tweets");
+//connect = connect.then(function() { return connectQueue("twitter_hose", "tweets"); }, showErr);
 connect = connect.then(function() { return connectQueue("trends_hose", "trends"); }, showErr);
 
 //for the larger spinn3r connection
 connect = connect.then(function() { return connectQueueTwo("spinn3r_hose", "spinn3r"); }, showErr);
+//Wiki on the cluster
+connect = connect.then(function() { return connectQueueTwo("wikipedia_hose", "wikipedia_revisions"); }, showErr);
+
+connect = connect.then(function() { return connectQueueTwo("twitter_delete_hose", "twitter_delete"); }, showErr);
+
+connect = connect.then(function() { return connectQueueTwo("twitter_delete_pulse_hose", "twitter_delete_pulse"); }, showErr);
+
+
 
 //Finally, are we ready?
 connect = connect.then(function() { console.log("Ready."); }, showErr);
