@@ -105,7 +105,7 @@ var connectQueueTwo = function (queueName, outName) {
     });
 };
 
-var connect = connectQueue("twitter_hose", "tweets");
+var connect = connectQueue("logs", "tweets");
 //connect = connect.then(function() { return connectQueue("twitter_hose", "tweets"); }, showErr);
 connect = connect.then(function() { return connectQueue("trends_hose", "trends"); }, showErr);
 
@@ -118,6 +118,10 @@ connect = connect.then(function() { return connectQueueTwo("twitter_delete_hose"
 
 connect = connect.then(function() { return connectQueueTwo("twitter_delete_pulse_hose", "twitter_delete_pulse"); }, showErr);
 
+
+connect = connect.then(function() { return connectQueueTwo("logs", "twitter"); }, showErr);
+
+connect = connect.then(function() { return connectQueueTwo("news_hose", "news"); }, showErr);
 
 
 //Finally, are we ready?
