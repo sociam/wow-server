@@ -8,6 +8,11 @@ var wpimg = require('wikipedia-image');
 
 app.listen(9001);
 
+var active_users = 0;
+var temp_user_cnt = 0;
+
+var keyword_filter = "";
+
 function showErr (e) {
     console.error(e, e.stack);
 }
@@ -30,14 +35,74 @@ io.on('connection', function (socket) {
         _.extend(filter, newFilter);
         //console.log("emitting filter:", filter); 
         io.emit("filter", filter);
+        io.emit("set_filter_keyword", keyword_filter);
     });
+
+    // receive a filter update, combine it and send to ALL clients
+    socket.on('filter_keyword', function (newFilter) {
+        //console.log("filter updated:", newFilter);
+        filter = true;
+        keyword_filter = newFilter;
+        //console.log("emitting filter:", filter); 
+        io.emit("filter", filter);
+        io.emit("set_filter_keyword", keyword_filter);
+
+    });
+
+
+    //new ms user...
+    // receive a filter update, combine it and send to ALL clients
+    socket.on('active_user', function (newFilter) {
+        //console.log("filter updated:", newFilter);
+        //console.log("emitting filter:", filter); 
+        ++temp_user_cnt;
+    });
+
 });
 
+
+
+
+//Update the master count with the temp count
+function updateUserCount(){
+    active_users = temp_user_cnt;
+}
+
+//want to send a heartbeat to all users to see how many are still connected!
+function checkForUsers() {
+    //send a heartbeat
+    temp_user_cnt = 0;
+     io.emit("user_heartbeat", filter);
+}
+
+//want to send a heartbeat to all users to see how many are still connected!
+function emitUserCount() {
+    //send a heartbeat
+     io.emit("active_user_count", active_users);
+}
+
+
+//These Control the User Count Details
+var checkForUsers_interval = setInterval(function(){checkForUsers()}, 1000);
+var updateUserCount_interval = setInterval(function(){updateUserCount()}, 2000);
+var emit_userCount = setInterval(function(){emitUserCount()}, 1000);
+
+
+
+
+
+//here we worry about the message sending
 var emitMsg = function (outName, msg) {
     try {
+
+        //do a raw match on the message
+        if(msg.content.toString().indexOf(keyword_filter) > -1){
+
         var data = JSON.parse(msg.content.toString());
         io.emit(outName, data);
 
+
+        //make the revisions images feed
         if (outName == "wikipedia_revisions") {
             var page_url = data.wikipedia_page_url;
             if (page_url) {
@@ -51,6 +116,10 @@ var emitMsg = function (outName, msg) {
                 	});
 		}
         }
+
+        //end of filter
+        }
+
     } catch (e) {
         //
     }
