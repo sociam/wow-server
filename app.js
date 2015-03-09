@@ -14,6 +14,8 @@ var temp_user_cnt = 0;
 var keyword_filter = "";
 var language_filter = "";
 
+var processed_msg_cnt = 0;
+
 
 function showErr (e) {
     console.error(e, e.stack);
@@ -27,6 +29,30 @@ function handler (req, res) {
 var filter = {
     "filter": false,
 }; // global filter state, and default
+
+
+
+//SOCKET DETAILS
+//Current socketnames in use:
+    // user_heartbeat
+    // active_user
+    // filter
+    // filter_keyword
+    // set_filter_keyword
+    // filter_lang
+    // set_filter_lang
+    // processed_messages;
+
+//Hoses (Mappings from RabbitMQ)
+    //trends
+    //news
+    //twitter
+    //spinn3r
+    //wikipedia_revisions
+    //wikipedia_images
+    //twitter_delete
+    //twitter_delete_pulse
+
 
 io.on('connection', function (socket) {
     socket.emit("filter", filter); // emit the current state to this client
@@ -47,10 +73,20 @@ io.on('connection', function (socket) {
         keyword_filter = newFilter;
         //console.log("emitting filter:", filter); 
         io.emit("filter", filter);
-        io.emit("set_filter_keyword", keyword_filter);
+        io.emit("set_filter_keyword", language_filter);
 
     });
 
+
+  // receive a filter update, combine it and send to ALL clients
+    socket.on('filter_lang', function (newFilter) {
+        //console.log("filter updated:", newFilter);
+        filter = true;
+        language_filter = newFilter;
+        //console.log("emitting filter:", filter); 
+        io.emit("filter", filter);
+        io.emit("set_filter_lang", language_filter);
+    });
 
     //new ms user...
     // receive a filter update, combine it and send to ALL clients
@@ -62,6 +98,13 @@ io.on('connection', function (socket) {
 
 });
 
+function emit_processed_message_count(){
+    io.emit("processed_msg_cnt", processed_msg_cnt);
+}
+//reset filters every 60 seconds - just for sanity...
+var processed_msgcnt_interval = setInterval(function(){emit_processed_message_count()}, 2000);
+
+
 
 //reset all filters
 function resetKeywords(){
@@ -71,13 +114,11 @@ function resetKeywords(){
 
 	//let the clients know
 	io.emit("set_filter_keyword", keyword_filter);
-	io.emit("set_filter_language", language_filter);
-
-
+	io.emit("set_filter_lang", language_filter);
 }
 
 //reset filters every 60 seconds - just for sanity...
-var resetKeywords_interval = setInterval(function(){resetKeywords()}, 60000);
+var resetKeywords_interval = setInterval(function(){resetKeywords()}, 120000);
 
 
 
@@ -107,33 +148,79 @@ var emit_userCount = setInterval(function(){emitUserCount()}, 1000);
 
 
 
+function checkFilters(msg){
 
+    var match_keyword = true;
+    var match_lang = true;
+
+    //is the filter enabled?
+    if(filter){
+
+
+        //check for keyword filter
+        if(msg.content.toString().indexOf(keyword_filter) > -1){
+            match_keyword = true;
+        }else{
+            match_keyword = false;
+        }
+
+        if(language_filter.length>0){
+
+           // var data = JSON.parse(msg.content.toString());
+            try{
+                    if(msg.content.toString().indexOf('"'+language_filter+'"')>-1){
+                        match_lang = true;
+                    }else{
+                        match_lang = false;
+                    }
+                }catch(e){
+                        console.log(e)
+                        match_lang = false;    
+                }
+        }
+
+        if(match_lang && match_keyword){
+            return true;
+        }else{
+            return false;
+        }
+
+
+    }else{
+
+        return true;
+    }
+
+
+}
 
 //here we worry about the message sending
+//We perform raw filtering here!
 var emitMsg = function (outName, msg) {
     try {
-
+        ++processed_msg_cnt;
         //do a raw match on the message
-        if(msg.content.toString().indexOf(keyword_filter) > -1){
+        
+        if(checkFilters(msg)){
 
-        var data = JSON.parse(msg.content.toString());
-        io.emit(outName, data);
+            var data = JSON.parse(msg.content.toString());
+            io.emit(outName, data);
 
-
-        //make the revisions images feed
-        if (outName == "wikipedia_revisions") {
-            var page_url = data.wikipedia_page_url;
-            if (page_url) {
-		      	wpimg(page_url).then(function (image) {
-                    		if (image && image != "") {
-                        	io.emit('wikipedia_images', {"image_url": image, "data": data});
-                    	}
-		
-                	}, function (e) {
-                    	// error querying etc
-                	});
-		}
-        }
+        
+            //make the revisions images feed
+            if (outName == "wikipedia_revisions") {
+                var page_url = data.wikipedia_page_url;
+                if (page_url) {
+    		      	wpimg(page_url).then(function (image) {
+                        		if (image && image != "") {
+                            	io.emit('wikipedia_images', {"image_url": image, "data": data});
+                        	}
+    		
+                    	}, function (e) {
+                        	// error querying etc
+                    	});
+    		}
+            }
 
         //end of filter
         }
