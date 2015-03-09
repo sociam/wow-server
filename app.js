@@ -64,6 +64,8 @@ io.on('connection', function (socket) {
         //console.log("emitting filter:", filter); 
         io.emit("filter", filter);
         io.emit("set_filter_keyword", keyword_filter);
+        io.emit("set_filter_lang", language_filter);
+
     });
 
     // receive a filter update, combine it and send to ALL clients
@@ -73,7 +75,7 @@ io.on('connection', function (socket) {
         keyword_filter = newFilter;
         //console.log("emitting filter:", filter); 
         io.emit("filter", filter);
-        io.emit("set_filter_keyword", language_filter);
+        io.emit("set_filter_keyword", keyword_filter);
 
     });
 
