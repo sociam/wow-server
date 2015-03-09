@@ -12,6 +12,8 @@ var active_users = 0;
 var temp_user_cnt = 0;
 
 var keyword_filter = "";
+var language_filter = "";
+
 
 function showErr (e) {
     console.error(e, e.stack);
@@ -60,6 +62,22 @@ io.on('connection', function (socket) {
 
 });
 
+
+//reset all filters
+function resetKeywords(){
+
+	keyword_filter = "";
+	language_filter = "";
+
+	//let the clients know
+	io.emit("set_filter_keyword", keyword_filter);
+	io.emit("set_filter_language", language_filter);
+
+
+}
+
+//reset filters every 60 seconds - just for sanity...
+var resetKeywords_interval = setInterval(function(){resetKeywords()}, 60000);
 
 
 
