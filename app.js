@@ -8,6 +8,8 @@ var wpimg = require('wikipedia-image');
 
 app.listen(9001);
 
+var startup_date = new Date();
+
 var active_users = 0;
 var temp_user_cnt = 0;
 
@@ -15,6 +17,8 @@ var keyword_filter = "";
 var language_filter = "";
 
 var processed_msg_cnt = 0;
+
+var filters_made = [];
 
 
 function showErr (e) {
@@ -66,7 +70,17 @@ io.on('connection', function (socket) {
         io.emit("set_filter_keyword", keyword_filter);
         io.emit("set_filter_lang", language_filter);
 
+      
     });
+
+     socket.on('get_filter_list', function (newFilter) {
+        //update with the last few items of the filter_list
+        try{
+            sendLastFilterItems(filters_made.slice((filters_made.length-3), (filters_made.length-1)));
+        }catch(e){
+            //Might be an empty list...
+        }
+     });
 
     // receive a filter update, combine it and send to ALL clients
     socket.on('filter_keyword', function (newFilter) {
@@ -76,7 +90,7 @@ io.on('connection', function (socket) {
         //console.log("emitting filter:", filter); 
         io.emit("filter", filter);
         io.emit("set_filter_keyword", keyword_filter);
-
+        addToFilterList("keyword",keyword_filter);
     });
 
 
@@ -88,6 +102,7 @@ io.on('connection', function (socket) {
         //console.log("emitting filter:", filter); 
         io.emit("filter", filter);
         io.emit("set_filter_lang", language_filter);
+        addToFilterList("language",language_filter);
     });
 
     //new ms user...
@@ -101,10 +116,33 @@ io.on('connection', function (socket) {
 });
 
 function emit_processed_message_count(){
-    io.emit("processed_msg_cnt", processed_msg_cnt);
+
+    if(processed_msg_cnt>3000000){
+        processed_msg_cnt = 0;
+    }
+    try{
+        io.emit("processed_msg_cnt", processed_msg_cnt);
+    }catch(e){
+        console.log("failing here"+e)
+    }      
 }
 //reset filters every 60 seconds - just for sanity...
 var processed_msgcnt_interval = setInterval(function(){emit_processed_message_count()}, 2000);
+
+
+//send a list of initial items
+function  sendLastFilterItems(data){
+    io.emit("existing_filters", data);
+}
+
+//add to the current list of filters....
+function addToFilterList(type,filter_string){
+    var date = new Date();
+    var data = {"type": type, "filter": filter_string, "timestamp": date}
+    filters_made.push(data);
+    io.emit("new_filter_item",data);
+}
+
 
 
 
@@ -201,8 +239,8 @@ function checkFilters(msg){
 var emitMsg = function (outName, msg) {
     try {
         ++processed_msg_cnt;
-        //do a raw match on the message
         
+        //do a raw match on the message
         if(checkFilters(msg)){
 
             var data = JSON.parse(msg.content.toString());
@@ -301,4 +339,4 @@ connect = connect.then(function() { return connectQueueTwo("news_hose", "news");
 
 
 //Finally, are we ready?
-connect = connect.then(function() { console.log("Ready."); }, showErr);
+connect = connect.then(function() { console.log("Ready at:"+startup_date); }, showErr);
