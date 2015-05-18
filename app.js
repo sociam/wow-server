@@ -127,7 +127,7 @@ function emit_processed_message_count(){
     }      
 }
 //reset filters every 60 seconds - just for sanity...
-var processed_msgcnt_interval = setInterval(function(){emit_processed_message_count()}, 2000);
+//var processed_msgcnt_interval = setInterval(function(){emit_processed_message_count()}, 2000);
 
 
 //send a list of initial items
@@ -238,7 +238,7 @@ function checkFilters(msg){
 //We perform raw filtering here!
 var emitMsg = function (outName, msg) {
     try {
-        ++processed_msg_cnt;
+        //++processed_msg_cnt;
         
         //do a raw match on the message
         if(checkFilters(msg)){
