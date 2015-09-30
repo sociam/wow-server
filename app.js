@@ -324,7 +324,7 @@ var connect = connectQueue("logs", "tweets");
 connect = connect.then(function() { return connectQueue("trends_hose", "trends"); }, showErr);
 
 //for the larger spinn3r connection
-connect = connect.then(function() { return connectQueueTwo("spinn3r_hose", "spinn3r"); }, showErr);
+connect = connect.then(function() { return connectQueueTwo("twitter_double", "spinn3r"); }, showErr);
 //Wiki on the cluster
 connect = connect.then(function() { return connectQueueTwo("wikipedia_hose", "wikipedia_revisions"); }, showErr);
 
@@ -333,10 +333,12 @@ connect = connect.then(function() { return connectQueueTwo("twitter_delete_hose"
 connect = connect.then(function() { return connectQueueTwo("twitter_delete_pulse_hose", "twitter_delete_pulse"); }, showErr);
 
 
-connect = connect.then(function() { return connectQueueTwo("logs", "twitter"); }, showErr);
+connect = connect.then(function() { return connectQueueTwo("twitter_double", "twitter"); }, showErr);
 
 connect = connect.then(function() { return connectQueueTwo("news_hose", "news"); }, showErr);
 
+connect = connect.then(function() { return connectQueueTwo("zooniverse_classifications", "zooniverse_classifications"); }, showErr);
+connect = connect.then(function() { return connectQueueTwo("zooniverse_talk", "zooniverse_talk"); }, showErr);
 
 //Finally, are we ready?
 connect = connect.then(function() { console.log("Ready at:"+startup_date); }, showErr);
