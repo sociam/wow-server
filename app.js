@@ -340,5 +340,5 @@ connect = connect.then(function() { return connectQueueTwo("news_hose", "news");
 connect = connect.then(function() { return connectQueueTwo("zooniverse_classifications", "zooniverse_classifications"); }, showErr);
 connect = connect.then(function() { return connectQueueTwo("zooniverse_talk", "zooniverse_talk"); }, showErr);
 
-//Finally, are we ready?
+// Finally, are we ready?
 connect = connect.then(function() { console.log("Ready at:"+startup_date); }, showErr);
