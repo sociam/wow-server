@@ -34,7 +34,7 @@ var filter = {
     "filter": false,
 }; // global filter state, and default
 
-
+io.sockets.setMaxListeners(0);
 
 //SOCKET DETAILS
 //Current socketnames in use:
@@ -158,7 +158,7 @@ function resetKeywords(){
 }
 
 //reset filters every 60 seconds - just for sanity...
-var resetKeywords_interval = setInterval(function(){resetKeywords()}, 120000);
+var resetKeywords_interval = setInterval(function(){resetKeywords()}, 1200000);
 
 
 
@@ -246,9 +246,10 @@ var emitMsg = function (outName, msg) {
             var data = JSON.parse(msg.content.toString());
             io.emit(outName, data);
 
-        
+            //console.log(outName);
             //make the revisions images feed
             if (outName == "wikipedia_revisions") {
+		//console.log(ring());
                 var page_url = data.wikipedia_page_url;
                 if (page_url) {
     		      	wpimg(page_url).then(function (image) {
@@ -271,7 +272,7 @@ var emitMsg = function (outName, msg) {
 }
 
 var connectQueue = function (queueName, outName) {
-    return amqp.connect("amqp://localhost").then(function(conn) {
+    return amqp.connect("amqp://admin:Sociam2015@sotonwo.cloudapp.net:5672").then(function(conn) {
 
         process.once('SIGINT', function() { conn.close(); });
         return conn.createChannel().then(function(ch) {
@@ -319,12 +320,14 @@ var connectQueueTwo = function (queueName, outName) {
     });
 };
 
-var connect = connectQueue("logs", "tweets");
+//var connect = connectQueue("wikipedia_hose", "wikipedia_revisions");
 //connect = connect.then(function() { return connectQueue("twitter_hose", "tweets"); }, showErr);
-connect = connect.then(function() { return connectQueue("trends_hose", "trends"); }, showErr);
+//connect = connect.then(function() { return connectQueue("trends_hose", "trends"); }, showErr);
 
 //for the larger spinn3r connection
-connect = connect.then(function() { return connectQueueTwo("twitter_double", "spinn3r"); }, showErr);
+var connect = connectQueueTwo("twitter_double", "spinn3r");
+
+//connect = connect.then(function() { return connectQueueTwo("twitter_double", "spinn3r"); }, showErr);
 //Wiki on the cluster
 connect = connect.then(function() { return connectQueueTwo("wikipedia_hose", "wikipedia_revisions"); }, showErr);
 
@@ -335,10 +338,15 @@ connect = connect.then(function() { return connectQueueTwo("twitter_delete_pulse
 
 connect = connect.then(function() { return connectQueueTwo("twitter_double", "twitter"); }, showErr);
 
-connect = connect.then(function() { return connectQueueTwo("news_hose", "news"); }, showErr);
+//connect = connect.then(function() { return connectQueueTwo("news_hose", "news"); }, showErr);
 
 connect = connect.then(function() { return connectQueueTwo("zooniverse_classifications", "zooniverse_classifications"); }, showErr);
 connect = connect.then(function() { return connectQueueTwo("zooniverse_talk", "zooniverse_talk"); }, showErr);
+
+connect = connect.then(function() { return connectQueueTwo("twitter_moocs", "twitter_moocs"); }, showErr);
+//connect = connect.then(function() { return connectQueueTwo("twitter_moocs", "spinn3r"); }, showErr);
+connect = connect.then(function() { return connectQueueTwo("twitter_uk_southampton", "spinn3r"); }, showErr);
+connect = connect.then(function() { return connectQueueTwo("twitter_uk_southampton", "twitter_uk_southampton"); }, showErr);
 
 // Finally, are we ready?
 connect = connect.then(function() { console.log("Ready at:"+startup_date); }, showErr);
