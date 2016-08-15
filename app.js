@@ -272,7 +272,7 @@ var emitMsg = function (outName, msg) {
 }
 
 var connectQueue = function (queueName, outName) {
-    return amqp.connect("amqp://admin:Sociam2015@sotonwo.cloudapp.net:5672").then(function(conn) {
+    return amqp.connect("amqp://recoin:Sociam2015@ramine.ecs.soton.ac.uk:5672").then(function(conn) {
 
         process.once('SIGINT', function() { conn.close(); });
         return conn.createChannel().then(function(ch) {
@@ -320,7 +320,7 @@ var connectQueueTwo = function (queueName, outName) {
     });
 };
 
-//var connect = connectQueue("wikipedia_hose", "wikipedia_revisions");
+ //var connect = connectQueue("Instagram", "instagram");
 //connect = connect.then(function() { return connectQueue("twitter_hose", "tweets"); }, showErr);
 //connect = connect.then(function() { return connectQueue("trends_hose", "trends"); }, showErr);
 
@@ -343,10 +343,11 @@ connect = connect.then(function() { return connectQueueTwo("twitter_double", "tw
 connect = connect.then(function() { return connectQueueTwo("zooniverse_classifications", "zooniverse_classifications"); }, showErr);
 connect = connect.then(function() { return connectQueueTwo("zooniverse_talk", "zooniverse_talk"); }, showErr);
 
-connect = connect.then(function() { return connectQueueTwo("twitter_moocs", "twitter_moocs"); }, showErr);
+//connect = connect.then(function() { return connectQueueTwo("twitter_moocs", "twitter_moocs"); }, showErr);
 //connect = connect.then(function() { return connectQueueTwo("twitter_moocs", "spinn3r"); }, showErr);
 connect = connect.then(function() { return connectQueueTwo("twitter_uk_southampton", "spinn3r"); }, showErr);
 connect = connect.then(function() { return connectQueueTwo("twitter_uk_southampton", "twitter_uk_southampton"); }, showErr);
+connect = connect.then(function() { return connectQueueTwo("twitter_science_museum", "twitter_science_museum"); }, showErr);
 
 // Finally, are we ready?
 connect = connect.then(function() { console.log("Ready at:"+startup_date); }, showErr);
